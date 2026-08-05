@@ -36,8 +36,8 @@
           </div>
         </div>
 
-        <div class="h-[600px] lg:h-auto">
-          <ChatWidget class="h-full min-h-[500px]" />
+        <div class="h-[420px] sm:h-[500px] lg:h-auto">
+          <ChatWidget class="h-full lg:min-h-[500px]" />
         </div>
       </div>
     </main>

@@ -7,29 +7,27 @@
     </div>
 
     <ul v-else class="divide-y divide-gray-100">
-      <li v-for="tx in transactions" :key="tx.id" class="flex items-center justify-between py-3">
-        <div class="flex items-center gap-3">
+      <li v-for="tx in transactions" :key="tx.id" class="flex items-start justify-between gap-3 py-3">
+        <div class="flex min-w-0 items-center gap-3">
           <span
-            class="flex h-9 w-9 items-center justify-center rounded-full text-sm"
+            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm"
             :class="isIncoming(tx) ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'"
           >
             {{ isIncoming(tx) ? '↓' : '↑' }}
           </span>
-          <div>
+          <div class="min-w-0">
             <p class="text-sm font-medium text-gray-900">{{ typeLabel(tx.type) }}</p>
-            <p class="text-xs text-gray-400">
+            <p class="truncate text-xs text-gray-400">
               {{ tx.description || 'Sin descripción' }} · {{ formatDate(tx.created_at) }}
+            </p>
+            <p class="hidden truncate font-mono text-xs text-gray-400 sm:block">
+              {{ tx.from_account_number }} → {{ tx.to_account_number }}
             </p>
           </div>
         </div>
-        <div class="text-right">
-          <p class="text-sm font-semibold" :class="isIncoming(tx) ? 'text-green-600' : 'text-red-600'">
-            {{ isIncoming(tx) ? '+' : '-' }}${{ tx.amount }}
-          </p>
-          <p class="text-xs font-mono text-gray-400">
-            {{ tx.from_account_number }} → {{ tx.to_account_number }}
-          </p>
-        </div>
+        <p class="shrink-0 text-sm font-semibold" :class="isIncoming(tx) ? 'text-green-600' : 'text-red-600'">
+          {{ isIncoming(tx) ? '+' : '-' }}${{ tx.amount }}
+        </p>
       </li>
     </ul>
   </div>
