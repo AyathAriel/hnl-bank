@@ -282,7 +282,7 @@ render.yaml              config de deploy (ver sección Deploy)
 
 ## Testing
 
-**Tests** (backend): 14 tests unitarios, todos pasando.
+**Tests** (backend): 18 tests unitarios, todos pasando.
 
 ```bash
 cd backend
@@ -292,9 +292,9 @@ go test ./... -v
 - `internal/ledger`: conversión de dinero (decimal↔centavos), incluyendo un test de ida-y-vuelta
   para descartar errores de redondeo de punto flotante.
 - `internal/auth`: hashing de contraseñas, generación/validación de JWT (token válido, secreto
-  incorrecto, token expirado, token corrupto), y el middleware de autenticación completo probado
+  incorrecto, token expirado, token corrupto), el middleware de autenticación completo probado
   con `httptest` (sin header, token inválido, token revocado, token válido con propagación correcta
-  del usuario al contexto).
+  del usuario al contexto), y generación/validación de códigos TOTP + QR para 2FA.
 
 ## Bonus implementados
 
@@ -308,7 +308,7 @@ go test ./... -v
 | **Rate limiting** | ✅ | Ver [Seguridad](#seguridad). |
 | **Responsive** | ✅ | Verificado explícitamente en 375px (móvil), 768px (tablet) y desktop en las 5 vistas. |
 | **2FA** | ✅ | TOTP (`pquerna/otp`) con QR (`skip2/go-qrcode`). Activación/desactivación desde `/security`, login en dos pasos. Probado end-to-end con una app autenticadora real en un celular. |
-| **Deploy** | ⏳ Preparado, pendiente de ejecutar | Ver [Deploy](#deploy) — es el último paso, se hace al final. |
+| **Deploy** | ⚙️ Preparado, no ejecutado (decisión) | Ver [Deploy](#deploy) para el detalle de por qué. |
 | Logs estructurados | Parcial | Logs con contexto (`chi/middleware.Logger` + logs propios de arranque/seed/errores); no son JSON estructurado. |
 | App móvil | ❌ | Fuera del alcance de esta entrega (bonus "Super Plus": requeriría un segundo frontend completo). |
 
@@ -363,4 +363,9 @@ TigerBeetle y PostgreSQL, a diferencia de plataformas puramente serverless):
   backend en Render), donde los servicios no comparten red interna por nombre como en
   docker-compose.
 
-El deploy real es el último paso de esta entrega y se documentará aquí una vez ejecutado.
+**Decisión:** no se ejecutó el deploy real. TigerBeetle necesita disco persistente para no perder
+datos entre reinicios, y eso requiere un plan pago en cualquier proveedor (Render, Railway, Fly.io
+— ninguno ofrece almacenamiento persistente gratis). Como el deploy es un bonus opcional y el
+proyecto ya cumple el 100% de los requisitos obligatorios corriendo con Docker localmente, se
+decidió dejar la configuración lista y documentada en vez de generar un costo recurrente. El
+Blueprint de Render se probó hasta el paso de revisión de configuración (sin completar el pago).
