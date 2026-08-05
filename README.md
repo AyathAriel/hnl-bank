@@ -21,7 +21,7 @@ de cualquier acción crítica.
 - [Seguridad](#seguridad)
 - [Variables de entorno](#variables-de-entorno)
 - [Estructura del repositorio](#estructura-del-repositorio)
-- [Testing y CI/CD](#testing-y-cicd)
+- [Testing](#testing)
 - [Bonus implementados](#bonus-implementados)
 - [Desarrollo local sin Docker](#desarrollo-local-sin-docker-opcional)
 - [Pruebas manuales sugeridas](#pruebas-manuales-sugeridas)
@@ -55,7 +55,7 @@ nada a mano) en varias rondas de pruebas reales, no solo revisión de código:
 | Ledger financiero | TigerBeetle (single-node, cluster de desarrollo) |
 | Usuarios / Auth | PostgreSQL 16 |
 | IA / Chat | Anthropic Messages API + servidor MCP propio (`modelcontextprotocol/go-sdk`) |
-| Infraestructura | Docker Compose (4 servicios) · GitHub Actions (CI) |
+| Infraestructura | Docker Compose (4 servicios) |
 
 ## Cómo levantar el proyecto
 
@@ -263,12 +263,11 @@ frontend/
   src/components/        NavBar, AccountCard, BalanceChart, TransactionForm, TransactionList,
                           ChatWidget, NotificationToasts, Toast
 tigerbeetle/             Dockerfile + entrypoint.sh (format-si-hace-falta + start)
-.github/workflows/       CI (GitHub Actions)
 docker-compose.yml
 render.yaml              config de deploy (ver sección Deploy)
 ```
 
-## Testing y CI/CD
+## Testing
 
 **Tests** (backend): 14 tests unitarios, todos pasando.
 
@@ -284,10 +283,6 @@ go test ./... -v
   con `httptest` (sin header, token inválido, token revocado, token válido con propagación correcta
   del usuario al contexto).
 
-**CI/CD**: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) corre en cada push/PR a `main`:
-`go vet` + `go build` + `go test` del backend, `npm run build` del frontend, y valida que las 3
-imágenes Docker (backend, frontend, tigerbeetle) construyan sin errores.
-
 ## Bonus implementados
 
 | Bonus | Estado | Detalle |
@@ -296,8 +291,7 @@ imágenes Docker (backend, frontend, tigerbeetle) construyan sin errores.
 | **Exportar (CSV)** | ✅ | `GET /api/transactions/export?account=` descarga el historial completo como CSV; botón "Exportar CSV" en `/history`. |
 | **Gráficas** | ✅ | Gráfica de evolución de saldo en el dashboard, usando el historial de balances point-in-time de TigerBeetle (flag `History` en las cuentas de cliente). SVG propio, sin dependencias externas. |
 | **WebSockets** | ✅ | `GET /api/ws?token=` — hub por usuario en el backend; notifica en tiempo real (toast + refresco automático del dashboard) cuando se completa un depósito, retiro o transferencia vía REST. Alcance: las operaciones ejecutadas desde el chat con IA no disparan esta notificación (el propio chat ya informa el resultado en la misma respuesta). |
-| **Testing** | ✅ | Ver [Testing y CI/CD](#testing-y-cicd). |
-| **CI/CD** | ✅ | Ver [Testing y CI/CD](#testing-y-cicd). |
+| **Testing** | ✅ | Ver [Testing](#testing). |
 | **Rate limiting** | ✅ | Ver [Seguridad](#seguridad). |
 | **Responsive** | ✅ | Verificado explícitamente en 375px (móvil), 768px (tablet) y desktop en las 5 vistas. |
 | **Deploy** | ⏳ Preparado, pendiente de ejecutar | Ver [Deploy](#deploy) — es el último paso, se hace al final. |
