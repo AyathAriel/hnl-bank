@@ -17,12 +17,9 @@ Go 1.25 · Vue 3 + Vite · TigerBeetle · PostgreSQL · Docker Compose · Anthro
 
 ## Credenciales de prueba
 
-| Email | Password |
-|---|---|
-| `ihernandez@email.com` | `Isabel2024!` |
-| `flopez@example.com` | `Francisco2024!` |
-
-(Dataset completo de 980 usuarios de prueba en `backend/seed-data/`, se carga automático al primer arranque.)
+Cualquier usuario del dataset sirve para iniciar sesión (contraseñas con el patrón `Nombre2024!`).
+Dataset completo de 980 usuarios de prueba en `backend/seed-data/`, se carga automático al primer
+arranque — ver ahí los emails disponibles.
 
 ## Documentación completa
 

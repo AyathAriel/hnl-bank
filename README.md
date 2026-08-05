@@ -13,7 +13,6 @@ de cualquier acción crítica.
 - [Estado del proyecto](#estado-del-proyecto)
 - [Stack técnico](#stack-técnico)
 - [Cómo levantar el proyecto](#cómo-levantar-el-proyecto)
-- [Credenciales de prueba](#credenciales-de-prueba)
 - [Arquitectura](#arquitectura)
 - [Chat con IA vía MCP](#chat-con-ia-vía-mcp)
 - [Decisiones de diseño ante ambigüedades del enunciado](#decisiones-de-diseño-ante-ambigüedades-del-enunciado)
@@ -81,10 +80,10 @@ Al primer arranque, el backend aplica las migraciones de PostgreSQL y **siembra 
 el dataset de prueba (`backend/seed-data/datos-prueba-HNL.json`). Este proceso es idempotente: en
 arranques posteriores, si ya hay usuarios en la base, se omite.
 
-
-Las contraseñas siguen el patrón `Nombre2024!` para cada usuario del dataset; puedes revisar
-`backend/seed-data/datos-prueba-HNL.json` para ver el resto de emails. También puedes registrar una
-cuenta nueva desde `/register`.
+Cualquier usuario del dataset sirve para iniciar sesión: las contraseñas siguen el patrón
+`Nombre2024!` para cada usuario (por ejemplo, el email `ihernandez@email.com` usa la contraseña
+`Isabel2024!`). Puedes revisar `backend/seed-data/datos-prueba-HNL.json` para ver el resto de
+emails, o registrar una cuenta nueva desde `/register`.
 
 ## Arquitectura
 
