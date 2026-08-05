@@ -81,14 +81,6 @@ Al primer arranque, el backend aplica las migraciones de PostgreSQL y **siembra 
 el dataset de prueba (`backend/seed-data/datos-prueba-HNL.json`). Este proceso es idempotente: en
 arranques posteriores, si ya hay usuarios en la base, se omite.
 
-## Credenciales de prueba
-
-Cualquier usuario del dataset sirve para iniciar sesión. Por ejemplo:
-
-| Email | Password |
-|---|---|
-| `ihernandez@email.com` | `Isabel2024!` |
-| `mjimenez@example.com` | `Miguel2024!` |
 
 Las contraseñas siguen el patrón `Nombre2024!` para cada usuario del dataset; puedes revisar
 `backend/seed-data/datos-prueba-HNL.json` para ver el resto de emails. También puedes registrar una
