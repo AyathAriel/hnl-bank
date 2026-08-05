@@ -36,13 +36,41 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, token, err := s.banking.Login(r.Context(), req.Email, req.Password)
+	result, err := s.banking.Login(r.Context(), req.Email, req.Password)
 	if err != nil {
 		if errors.Is(err, banking.ErrInvalidCredentials) {
 			writeError(w, http.StatusUnauthorized, "Correo o contraseña inválidos.")
 			return
 		}
 		writeError(w, http.StatusInternalServerError, "No se pudo iniciar sesión.")
+		return
+	}
+
+	if result.RequiresTOTP {
+		writeJSON(w, http.StatusOK, AuthResponse{RequiresTOTP: true, PendingToken: result.PendingToken})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, AuthResponse{Token: result.Token, User: result.User})
+}
+
+// handleVerify2FA canjea un pending_token + código TOTP por una sesión real.
+// Vive en el grupo público de /api/auth (rate-limitado) porque, por
+// definición, el usuario todavía no tiene una sesión completa en este punto.
+func (s *Server) handleVerify2FA(w http.ResponseWriter, r *http.Request) {
+	var req Verify2FARequest
+	if err := decodeAndValidate(r, &req); err != nil {
+		writeError(w, http.StatusBadRequest, "Ingresa un código de 6 dígitos válido.")
+		return
+	}
+
+	user, token, err := s.banking.VerifyPendingLogin(r.Context(), req.PendingToken, req.Code)
+	if err != nil {
+		if errors.Is(err, banking.ErrInvalidTOTPCode) {
+			writeError(w, http.StatusUnauthorized, "Código incorrecto.")
+			return
+		}
+		writeError(w, http.StatusUnauthorized, "Sesión de verificación inválida o expirada. Inicia sesión de nuevo.")
 		return
 	}
 

@@ -35,6 +35,11 @@ func Middleware(secret string, isRevoked IsRevokedFunc) func(http.Handler) http.
 				writeUnauthorized(w, "Sesión inválida o expirada. Inicia sesión de nuevo.")
 				return
 			}
+			if claims.Purpose != "" {
+				// Token intermedio (ej. pendiente de 2FA): nunca es una sesión válida.
+				writeUnauthorized(w, "Sesión inválida o expirada. Inicia sesión de nuevo.")
+				return
+			}
 
 			revoked, err := isRevoked(r.Context(), claims.ID)
 			if err != nil {

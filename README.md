@@ -45,6 +45,9 @@ nada a mano) en varias rondas de pruebas reales, no solo revisión de código:
   consultando el saldo real por API, no solo la respuesta del chat).
 - ✅ Notificaciones en tiempo real por WebSocket probadas en vivo (depósito hecho por API mientras el
   dashboard estaba abierto en el navegador; el saldo y el historial se actualizaron solos).
+- ✅ **2FA (TOTP) probado con un celular real**: activación escaneando el QR con Google
+  Authenticator, login exigiendo el código de 6 dígitos antes de dar acceso, y desactivación — los
+  tres pasos confirmados de punta a punta, no solo a nivel de código.
 
 ## Stack técnico
 
@@ -183,6 +186,11 @@ Todos los endpoints, salvo auth y el health check, requieren `Authorization: Bea
 | POST | `/api/auth/register` | Registra un usuario y crea su cuenta corriente |
 | POST | `/api/auth/login` | Inicia sesión, devuelve un JWT |
 | POST | `/api/auth/logout` | Revoca el JWT actual |
+| POST | `/api/auth/2fa/verify` | `{pending_token, code}` → canjea el segundo factor por una sesión real |
+| GET | `/api/auth/2fa/status` | Si el usuario tiene 2FA activado |
+| POST | `/api/auth/2fa/setup` | Genera un secreto TOTP nuevo + QR (sin activarlo todavía) |
+| POST | `/api/auth/2fa/enable` | `{code}` → confirma y activa 2FA |
+| POST | `/api/auth/2fa/disable` | `{password}` → desactiva 2FA |
 | GET | `/api/accounts` | Lista las cuentas del usuario con saldo actual |
 | GET | `/api/accounts/{number}` | Detalle de una cuenta propia |
 | GET | `/api/accounts/{number}/balance-history` | Serie histórica de saldo (para la gráfica) |
@@ -203,6 +211,11 @@ La seguridad se trató como requisito central, no como agregado opcional:
 - Contraseñas con **bcrypt** (costo 12).
 - **JWT** (HS256, 24h) + blacklist de revocación en PostgreSQL para logout real, no solo del lado
   del cliente.
+- **2FA con TOTP** (bonus, opcional por usuario): al activarlo, el login exige un código de 6 dígitos
+  de una app autenticadora (Google Authenticator, Authy, etc.) antes de emitir una sesión real. El
+  JWT intermedio que se entrega tras la contraseña lleva un claim `purpose=2fa_pending` que el
+  middleware de autenticación rechaza explícitamente en cualquier otra ruta — ese token nunca sirve
+  para acceder a la API, solo para canjearse por una sesión real en `/api/auth/2fa/verify`.
 - Validación de entrada en todos los DTOs (`go-playground/validator`) y de formato de montos;
   ningún mensaje de error expone detalles internos (stack traces, SQL, rutas de archivo) al cliente.
 - **SQL 100% parametrizado** (pgx, placeholders `$1..$n`) en toda la aplicación — cero
@@ -249,7 +262,7 @@ backend/
   internal/db/           pool de Postgres + migraciones embebidas
   internal/ledger/       wrapper sobre TigerBeetle (cuentas, transferencias, balances)
   internal/banking/      lógica de dominio (única capa de negocio, usada por REST y MCP)
-  internal/auth/         bcrypt, JWT, middleware, blacklist de revocación
+  internal/auth/         bcrypt, JWT, middleware, blacklist de revocación, TOTP (2FA)
   internal/httpapi/      router y handlers REST
   internal/mcptools/     definición de las tools MCP
   internal/chat/         cliente Anthropic + cliente MCP + orquestador del chat
@@ -258,8 +271,8 @@ backend/
   seed-data/             datos-prueba-HNL.json (dataset provisto)
 frontend/
   src/api/               cliente axios
-  src/stores/            Pinia (auth, accounts, transactions, chat, notifications)
-  src/views/             Login, Register, Dashboard, Transactions, History
+  src/stores/            Pinia (auth, accounts, transactions, chat, notifications, twofa)
+  src/views/             Login, Register, Dashboard, Transactions, History, Security
   src/components/        NavBar, AccountCard, BalanceChart, TransactionForm, TransactionList,
                           ChatWidget, NotificationToasts, Toast
 tigerbeetle/             Dockerfile + entrypoint.sh (format-si-hace-falta + start)
@@ -294,9 +307,10 @@ go test ./... -v
 | **Testing** | ✅ | Ver [Testing](#testing). |
 | **Rate limiting** | ✅ | Ver [Seguridad](#seguridad). |
 | **Responsive** | ✅ | Verificado explícitamente en 375px (móvil), 768px (tablet) y desktop en las 5 vistas. |
+| **2FA** | ✅ | TOTP (`pquerna/otp`) con QR (`skip2/go-qrcode`). Activación/desactivación desde `/security`, login en dos pasos. Probado end-to-end con una app autenticadora real en un celular. |
 | **Deploy** | ⏳ Preparado, pendiente de ejecutar | Ver [Deploy](#deploy) — es el último paso, se hace al final. |
 | Logs estructurados | Parcial | Logs con contexto (`chi/middleware.Logger` + logs propios de arranque/seed/errores); no son JSON estructurado. |
-| 2FA, App móvil | ❌ | Fuera del alcance de esta entrega. |
+| App móvil | ❌ | Fuera del alcance de esta entrega (bonus "Super Plus": requeriría un segundo frontend completo). |
 
 ## Desarrollo local sin Docker (opcional)
 
@@ -335,7 +349,7 @@ npm run dev
   no representan movimientos reales replicados en TigerBeetle.
 - Las notificaciones WebSocket solo se disparan para operaciones hechas vía REST/UI, no desde el
   chat.
-- No se implementó 2FA (fuera del alcance obligatorio de la prueba).
+- No se implementó app móvil nativa (bonus "Super Plus", fuera de alcance).
 
 ## Deploy
 

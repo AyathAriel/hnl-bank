@@ -7,6 +7,7 @@ const routes = [
   { path: '/', name: 'dashboard', component: () => import('../views/DashboardView.vue'), meta: { requiresAuth: true } },
   { path: '/transactions', name: 'transactions', component: () => import('../views/TransactionsView.vue'), meta: { requiresAuth: true } },
   { path: '/history', name: 'history', component: () => import('../views/HistoryView.vue'), meta: { requiresAuth: true } },
+  { path: '/security', name: 'security', component: () => import('../views/SecurityView.vue'), meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({

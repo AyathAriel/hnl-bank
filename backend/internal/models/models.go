@@ -9,6 +9,7 @@ type User struct {
 	PasswordHash string    `json:"-"`
 	FullName     string    `json:"full_name"`
 	CreatedAt    time.Time `json:"created_at"`
+	TOTPEnabled  bool      `json:"totp_enabled"`
 }
 
 type AccountType string

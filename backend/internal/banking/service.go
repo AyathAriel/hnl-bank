@@ -124,30 +124,50 @@ func (s *Service) generateUniqueAccountNumber(ctx context.Context, tx pgx.Tx) (s
 	return "", fmt.Errorf("could not generate a unique account number")
 }
 
-// Login valida credenciales y devuelve un JWT nuevo.
-func (s *Service) Login(ctx context.Context, email, password string) (models.User, string, error) {
+// LoginResult representa el resultado de un intento de login. Si el usuario
+// tiene 2FA activado, RequiresTOTP viene en true y Token queda vacío: el
+// cliente debe canjear PendingToken + un código válido en
+// POST /api/auth/2fa/verify para obtener una sesión real.
+type LoginResult struct {
+	User         models.User
+	Token        string
+	RequiresTOTP bool
+	PendingToken string
+}
+
+// Login valida credenciales y devuelve una sesión nueva, o un token pendiente
+// de segundo factor si el usuario tiene 2FA activado.
+func (s *Service) Login(ctx context.Context, email, password string) (LoginResult, error) {
 	email = strings.ToLower(strings.TrimSpace(email))
 
 	var user models.User
 	var hash string
 	err := s.pool.QueryRow(ctx,
-		`SELECT id, email, password_hash, full_name, created_at FROM users WHERE email = $1`,
+		`SELECT id, email, password_hash, full_name, created_at, totp_enabled FROM users WHERE email = $1`,
 		email,
-	).Scan(&user.ID, &user.Email, &hash, &user.FullName, &user.CreatedAt)
+	).Scan(&user.ID, &user.Email, &hash, &user.FullName, &user.CreatedAt, &user.TOTPEnabled)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return models.User{}, "", ErrInvalidCredentials
+			return LoginResult{}, ErrInvalidCredentials
 		}
-		return models.User{}, "", fmt.Errorf("querying user: %w", err)
+		return LoginResult{}, fmt.Errorf("querying user: %w", err)
 	}
 
 	if !auth.CheckPassword(hash, password) {
-		return models.User{}, "", ErrInvalidCredentials
+		return LoginResult{}, ErrInvalidCredentials
+	}
+
+	if user.TOTPEnabled {
+		pending, err := auth.GeneratePending2FAToken(s.jwtSecret, user.ID, user.Email)
+		if err != nil {
+			return LoginResult{}, fmt.Errorf("generating pending token: %w", err)
+		}
+		return LoginResult{User: user, RequiresTOTP: true, PendingToken: pending}, nil
 	}
 
 	token, _, err := auth.GenerateToken(s.jwtSecret, user.ID, user.Email, s.jwtExpiryHours)
 	if err != nil {
-		return models.User{}, "", fmt.Errorf("generating token: %w", err)
+		return LoginResult{}, fmt.Errorf("generating token: %w", err)
 	}
-	return user, token, nil
+	return LoginResult{User: user, Token: token}, nil
 }

@@ -51,6 +51,7 @@ const links = [
   { to: '/', label: 'Dashboard' },
   { to: '/transactions', label: 'Transacciones' },
   { to: '/history', label: 'Historial' },
+  { to: '/security', label: 'Seguridad' },
 ]
 
 const auth = useAuthStore()

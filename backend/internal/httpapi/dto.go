@@ -12,8 +12,32 @@ type LoginRequest struct {
 }
 
 type AuthResponse struct {
-	Token string      `json:"token"`
-	User  interface{} `json:"user"`
+	Token        string      `json:"token,omitempty"`
+	User         interface{} `json:"user,omitempty"`
+	RequiresTOTP bool        `json:"requires_totp,omitempty"`
+	PendingToken string      `json:"pending_token,omitempty"`
+}
+
+type Verify2FARequest struct {
+	PendingToken string `json:"pending_token" validate:"required"`
+	Code         string `json:"code" validate:"required,len=6,numeric"`
+}
+
+type Setup2FAResponse struct {
+	Secret       string `json:"secret"`
+	QRCodeDataURL string `json:"qr_code_data_url"`
+}
+
+type Enable2FARequest struct {
+	Code string `json:"code" validate:"required,len=6,numeric"`
+}
+
+type Disable2FARequest struct {
+	Password string `json:"password" validate:"required"`
+}
+
+type TOTPStatusResponse struct {
+	Enabled bool `json:"enabled"`
 }
 
 type DepositRequest struct {

@@ -30,6 +30,7 @@ func (s *Server) Router() http.Handler {
 			r.Use(authLimiter.Middleware)
 			r.Post("/register", s.handleRegister)
 			r.Post("/login", s.handleLogin)
+			r.Post("/2fa/verify", s.handleVerify2FA)
 		})
 
 		// El WebSocket de notificaciones autentica el token por query param
@@ -42,6 +43,10 @@ func (s *Server) Router() http.Handler {
 			r.Use(auth.Middleware(s.cfg.JWTSecret, s.revocation.IsRevoked))
 
 			r.Post("/auth/logout", s.handleLogout)
+			r.Get("/auth/2fa/status", s.handle2FAStatus)
+			r.Post("/auth/2fa/setup", s.handle2FASetup)
+			r.Post("/auth/2fa/enable", s.handle2FAEnable)
+			r.Post("/auth/2fa/disable", s.handle2FADisable)
 
 			r.Get("/accounts", s.handleListAccounts)
 			r.Get("/accounts/{number}", s.handleGetAccount)
