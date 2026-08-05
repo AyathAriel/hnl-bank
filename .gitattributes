@@ -1,0 +1,5 @@
+# Fuerza LF en archivos que se ejecutan dentro de contenedores Linux, para
+# que clonar el repo en Windows (core.autocrlf) no rompa el shebang con CRLF.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.go text eol=lf

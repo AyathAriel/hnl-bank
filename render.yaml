@@ -1,0 +1,75 @@
+# Blueprint de Render (https://render.com/docs/blueprint-spec) para desplegar
+# HNL Bank completo: backend, frontend, TigerBeetle y PostgreSQL.
+#
+# Uso:
+#   1. Sube el repo a GitHub (obligatorio para Render).
+#   2. En Render: New > Blueprint > selecciona este repositorio.
+#   3. Completa la variable ANTHROPIC_API_KEY (marcada como sync: false) desde
+#      el dashboard de Render antes de desplegar.
+#   4. Render crea los 4 servicios y los conecta automáticamente por su red
+#      privada interna (mismo mecanismo que docker-compose en local).
+#
+# Nota: TigerBeetle y PostgreSQL usan discos persistentes (`disk:`), ya que
+# pierden los datos si el contenedor se recicla sin almacenamiento durable.
+
+databases:
+  - name: hnl-bank-postgres
+    databaseName: hnl_bank
+    user: hnl
+    plan: free
+
+services:
+  - type: pserv
+    name: hnl-bank-tigerbeetle
+    runtime: docker
+    dockerContext: ./tigerbeetle
+    dockerfilePath: ./tigerbeetle/Dockerfile
+    plan: starter
+    disk:
+      name: tigerbeetle-data
+      mountPath: /data
+      sizeGB: 5
+    envVars:
+      - key: TB_CLUSTER_ID
+        value: "0"
+
+  - type: web
+    name: hnl-bank-backend
+    runtime: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hnl-bank-postgres
+          property: connectionString
+      - key: TB_ADDRESS
+        value: hnl-bank-tigerbeetle:3000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRY_HOURS
+        value: "24"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-sonnet-5
+      - key: CORS_ORIGIN
+        value: https://hnl-bank-frontend.onrender.com
+      - key: PORT
+        value: "8080"
+
+  - type: web
+    name: hnl-bank-frontend
+    runtime: docker
+    dockerContext: ./frontend
+    dockerfilePath: ./frontend/Dockerfile
+    plan: starter
+    # En Render (a diferencia de docker-compose) los servicios no comparten
+    # una red donde "backend:8080" resuelva por nombre, así que el frontend
+    # llama directo a la URL pública del backend en vez de pasar por el
+    # proxy /api de nginx. api/client.js ya soporta esto vía VITE_API_URL.
+    envVars:
+      - key: VITE_API_URL
+        value: https://hnl-bank-backend.onrender.com

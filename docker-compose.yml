@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-hnl}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hnl_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-hnl_bank}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    # Sin mapeo de puertos al host a propósito: Postgres solo debe ser
+    # alcanzable desde la red interna de docker-compose (superficie de
+    # ataque mínima). Para inspeccionarla localmente: `docker compose exec
+    # postgres psql -U hnl -d hnl_bank`.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hnl} -d ${POSTGRES_DB:-hnl_bank}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  tigerbeetle:
+    build: ./tigerbeetle
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      TB_CLUSTER_ID: ${TB_CLUSTER_ID:-0}
+    volumes:
+      - tb_data:/data
+    # Igual que Postgres: TigerBeetle no se expone al host, solo es
+    # alcanzable por el backend a través de la red interna de docker-compose.
+
+  backend:
+    build: ./backend
+    # tigerbeetle-go embebe el cliente nativo de TigerBeetle (cgo), que también
+    # necesita io_uring — igual que el propio servidor TigerBeetle.
+    security_opt:
+      - seccomp:unconfined
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-hnl}:${POSTGRES_PASSWORD:-hnl_dev_password}@postgres:5432/${POSTGRES_DB:-hnl_bank}?sslmode=disable
+      TB_ADDRESS: tigerbeetle:3000
+      PORT: 8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      tigerbeetle:
+        condition: service_started
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  pg_data:
+  tb_data:

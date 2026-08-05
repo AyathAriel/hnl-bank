@@ -1,0 +1,28 @@
+# Env
+.env
+
+# Go
+backend/tmp/
+backend/*.exe
+backend/*.test
+backend/coverage.out
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# TigerBeetle / Postgres local data (bind mounts, if ever used instead of named volumes)
+data/
+tigerbeetle/data/
+pgdata/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.log
+
+# Local session tooling (not part of the delivered project)
+.claude/
